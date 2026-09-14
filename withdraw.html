@@ -68,8 +68,8 @@
         
         <div class="balance-box">
             <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase;">আপনার বর্তমান পয়েন্ট</p>
-            <h3 id="user-points" style="font-size: 32px; color: #4ade80; margin-top: 4px;">1200</h3>
-            <p id="taka-conversion" style="font-size: 13px; color: #facc15; margin-top: 2px;">সমান প্রায় ৳১২.০০</p>
+            <h3 id="user-points" style="font-size: 32px; color: #4ade80; margin-top: 4px;">0</h3>
+            <p id="taka-conversion" style="font-size: 13px; color: #facc15; margin-top: 2px;">সমান প্রায় ৳০.০০</p>
         </div>
 
         <div class="input-group">
@@ -108,7 +108,12 @@
         const userId = user ? user.id : urlUserId;
         const userName = user ? user.first_name : "User";
 
-        let userTotalPoints = 1200; // আপনার ডাটাবেজ বা ব্যাকএন্ড থেকে এই ভ্যালু ডাইনামিক করতে হবে
+        // localStorage থেকে ইউজারের আসল পয়েন্ট লোড করা (যদি না থাকে তবে ০ দেখাবে)
+        let userTotalPoints = parseInt(localStorage.getItem('user_points')) || 0;
+
+        // UI আপডেট করা
+        document.getElementById('user-points').innerText = userTotalPoints;
+        document.getElementById('taka-conversion').innerText = `সমান প্রায় ৳${(userTotalPoints / 100).toFixed(2)}`;
 
         function calculateTaka(points) {
             const taka = (points / 100).toFixed(2);
@@ -155,7 +160,7 @@
             const payoutAmount = (points / 100).toFixed(2);
 
             try {
-                const response = await fetch('/api/withdraw-request', {
+                const response =- await fetch('/api/withdraw-request', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
