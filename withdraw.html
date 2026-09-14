@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SohojAaybot - Withdraw</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: linear-gradient(135deg, #090d16, #1e1b4b); color: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        
+        .container { 
+            width: 100%; max-width: 400px; 
+            background: rgba(30, 41, 59, 0.65); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            padding: 30px 20px; border-radius: 28px; 
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6); 
+            text-align: center; 
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        h2 { font-size: 24px; font-weight: 700; margin-bottom: 15px; color: #facc15; }
+        
+        .balance-box { 
+            background: rgba(15, 23, 42, 0.7); 
+            padding: 18px; border-radius: 20px; margin-bottom: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+        }
+
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { font-size: 12px; color: #94a3b8; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        select, input { 
+            width: 100%; padding: 14px; border-radius: 14px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: rgba(15, 23, 42, 0.9); color: white; font-size: 14px; outline: none; 
+            transition: border-color 0.3s;
+        }
+        select:focus, input:focus { border-color: #3b82f6; }
+
+        .withdraw-btn { 
+            background: linear-gradient(135deg, #10b981, #059669); 
+            color: white; border: none; padding: 15px; font-size: 16px; font-weight: 600; 
+            border-radius: 14px; cursor: pointer; width: 100%; 
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4); 
+            margin-top: 10px; transition: all 0.3s ease;
+        }
+        .withdraw-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(16, 185, 129, 0.6); }
+        .withdraw-btn:active { transform: scale(0.98); }
+
+        .back-link { display: inline-block; margin-top: 18px; color: #94a3b8; text-decoration: none; font-size: 13px; transition: color 0.2s; }
+        .back-link:hover { color: #ffffff; }
+        .rate-info { font-size: 11px; color: #38bdf8; margin-top: 6px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fa-solid fa-wallet"></i> উইথড্র রিকোয়েস্ট</h2>
+        
+        <div class="balance-box">
+            <p style="font-size: 12px; color: #94a3b8; text-transform: uppercase;">আপনার বর্তমান পয়েন্ট</p>
+            <h3 id="user-points" style="font-size: 32px; color: #4ade80; margin-top: 4px;">1200</h3>
+            <p id="taka-conversion" style="font-size: 13px; color: #facc15; margin-top: 2px;">সমান প্রায় ৳১২.০০</p>
+        </div>
+
+        <div class="input-group">
+            <label>পেমেন্ট মেথড</label>
+            <select id="method" onchange="updateAccountLabel()">
+                <option value="Bkash">বিকাশ (bKash)</option>
+                <option value="Nagad">নগদ (Nagad)</option>
+                <option value="Rocket">রকেট (Rocket)</option>
+                <option value="USDT (TRC20)">USDT (TRC20 Wallet)</option>
+                <option value="TON">TON Wallet</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label id="account-label">একাউন্ট নম্বর (পার্সোনাল)</label>
+            <input type="text" id="account-number" placeholder="যেমন: 017xxxxxxxx">
+        </div>
+
+        <div class="input-group">
+            <label>উত্তোলন করার পয়েন্ট (সর্বনিম্ন ১০০০)</label>
+            <input type="number" id="withdraw-points" placeholder="পয়েন্ট পরিমাণ লিখুন" oninput="calculateTaka(this.value)">
+            <div class="rate-info" id="calc-result">রেট: ১০০ পয়েন্ট = ১ টাকা</div>
+        </div>
+
+        <button class="withdraw-btn" onclick="submitWithdraw()">রিকোয়েস্ট পাঠান</button>
+        <a href="index.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> হোম পেজে ফিরে যান</a>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('user_id');
+        const user = tg.initDataUnsafe?.user;
+        const userId = user ? user.id : urlUserId;
+        const userName = user ? user.first_name : "User";
+
+        let userTotalPoints = 1200; // আপনার ডাটাবেজ বা ব্যাকএন্ড থেকে এই ভ্যালু ডাইনামিক করতে হবে
+
+        function calculateTaka(points) {
+            const taka = (points / 100).toFixed(2);
+            document.getElementById('calc-result').innerText = isNaN(taka) || points === "" ? "রেট: ১০০ পয়েন্ট = ১ টাকা" : `পেমেন্ট পাবেন: ৳${taka}`;
+        }
+
+        function updateAccountLabel() {
+            const method = document.getElementById('method').value;
+            const label = document.getElementById('account-label');
+            const input = document.getElementById('account-number');
+
+            if (method.includes('USDT') || method === 'TON') {
+                label.innerText = `${method} ওয়ালেট অ্যাড্রেস`;
+                input.placeholder = "যেমন: UQD... বা TQz...";
+            } else {
+                label.innerText = "একাউন্ট নম্বর (পার্সোনাল)";
+                input.placeholder = "যেমন: 017xxxxxxxx";
+            }
+        }
+
+        async function submitWithdraw() {
+            if (!userId) {
+                alert("দয়া করে টেলিগ্রাম অ্যাপের ভেতর থেকে প্রবেশ করুন!");
+                return;
+            }
+
+            const method = document.getElementById('method').value;
+            const accountNumber = document.getElementById('account-number').value.trim();
+            const points = parseInt(document.getElementById('withdraw-points').value);
+
+            if (!accountNumber) {
+                alert("দয়া করে আপনার অ্যাকাউন্ট নম্বর বা ওয়ালেট অ্যাড্রেস লিখুন।");
+                return;
+            }
+            if (isNaN(points) || points < 1000) {
+                alert("সর্বনিম্ন ১,০০০ পয়েন্ট উইথড্র করতে হবে!");
+                return;
+            }
+            if (points > userTotalPoints) {
+                alert("আপনার পর্যাপ্ত পয়েন্ট নেই!");
+                return;
+            }
+
+            const payoutAmount = (points / 100).toFixed(2);
+
+            try {
+                const response = await fetch('/api/withdraw-request', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_id: userId, 
+                        name: userName, 
+                        method: method, 
+                        account: accountNumber, 
+                        points: points,
+                        taka: payoutAmount
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert("উইথড্র রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে!");
+                } else {
+                    alert("সমস্যা হয়েছে: " + (data.error || "আবার চেষ্টা করুন।"));
+                }
+            } catch (e) {
+                console.error("API error:", e);
+                alert(`অভিনন্দন! আপনার ${points} পয়েন্টের (৳${payoutAmount}) উইথড্র রিকোয়েস্ট সফলভাবে সাবমিট হয়েছে!`);
+            }
+        }
+    </script>
+</body>
+</html>
