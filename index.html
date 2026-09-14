@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SohojAaybot - Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/sad.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: linear-gradient(135deg, #090d16, #1e1b4b); color: #ffffff; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; overflow: hidden; }
+        
+        .container { 
+            width: 100%; max-width: 400px; 
+            background: rgba(30, 41, 59, 0.65); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255, 255, 255, 0.12); 
+            padding: 30px 20px; border-radius: 28px; 
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6); 
+            text-align: center; 
+            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .avatar-glow { 
+            width: 85px; height: 85px; margin: 0 auto 15px; 
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6); 
+            border-radius: 50%; display: flex; justify-content: center; align-items: center; 
+            font-size: 34px; box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); 
+            animation: pulseGlow 2s infinite alternate; 
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); transform: scale(1); }
+            100% { box-shadow: 0 0 35px rgba(139, 92, 246, 0.9); transform: scale(1.06); }
+        }
+
+        h2 { 
+            font-size: 26px; font-weight: 700; margin-bottom: 5px; 
+            background: linear-gradient(90deg, #60a5fa, #c084fc); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; 
+        }
+
+        #user-info { font-size: 14px; color: #94a3b8; margin-bottom: 25px; }
+
+        .card-box { 
+            background: rgba(15, 23, 42, 0.7); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            padding: 20px; border-radius: 20px; margin-bottom: 25px; 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .points-title { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; }
+        
+        #points-display { 
+            font-size: 40px; font-weight: 700; color: #facc15; margin-top: 5px; 
+            transition: transform 0.3s ease;
+        }
+
+        .bounce-anim { animation: bounceNum 0.4s ease; }
+        @keyframes bounceNum {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); color: #4ade80; }
+            100% { transform: scale(1); }
+        }
+
+        .ad-btn { 
+            background: linear-gradient(135deg, #2563eb, #7c3aed); 
+            color: white; border: none; padding: 16px 20px; font-size: 16px; font-weight: 600; 
+            border-radius: 16px; cursor: pointer; width: 100%; display: flex; align-items: center; 
+            justify-content: center; gap: 10px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4); 
+            transition: all 0.3s ease; margin-bottom: 12px;
+        }
+        .ad-btn:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(124, 58, 237, 0.6); }
+        .ad-btn:active { transform: scale(0.98); }
+
+        .withdraw-link-btn { 
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); 
+            color: #4ade80; padding: 14px; border-radius: 16px; text-decoration: none; 
+            font-weight: 600; transition: all 0.3s ease;
+        }
+        .withdraw-link-btn:hover { background: rgba(16, 185, 129, 0.25); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="avatar-glow"><i class="fa-solid fa-bolt"></i></div>
+        <h2>SohojAaybot</h2>
+        <div id="user-info">ইউজার লোড হচ্ছে...</div>
+        
+        <div class="card-box">
+            <div class="points-title">আপনার বর্তমান পয়েন্ট</div>
+            <div id="points-display">0</div>
+        </div>
+        
+        <button class="ad-btn" onclick="showAd()">
+            <i class="fa-solid fa-play"></i> বিজ্ঞাপন দেখে আয় করুন (+১০)
+        </button>
+
+        <a href="withdraw.html" class="withdraw-link-btn"><i class="fa-solid fa-wallet"></i> উইথড্র পেজে যান</a>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUserId = urlParams.get('user_id');
+        const user = tg.initDataUnsafe?.user;
+        const userId = user ? user.id : urlUserId;
+        const userName = user ? user.first_name : "User";
+
+        if (userId) {
+            document.getElementById('user-info').innerText = `স্বাগতম, ${userName}! 👋`;
+        } else {
+            document.getElementById('user-info').innerText = `স্বাগতম, مہمان! 👋`;
+        }
+
+        let currentPoints = 0;
+        // Adsgram থেকে প্রাপ্ত আসল Block ID এখানে বসিয়ে দিন
+        const adController = window.Adsgram.init({ blockId: "47779" });
+
+        async function showAd() {
+            try {
+                const result = await adController.show();
+                if (result.done) {
+                    currentPoints += 10;
+                    updatePointsUI(currentPoints);
+                } else {
+                    alert("বিজ্ঞাপনটি সম্পূর্ণ না দেখায় পয়েন্ট যোগ হয়নি।");
+                }
+            } catch (err) {
+                console.error("Ad error:", err);
+                alert("বিজ্ঞাপন লোড হতে সমস্যা হয়েছে। কিছুক্ষণ পর চেষ্টা করুন।");
+            }
+        }
+
+        function updatePointsUI(points) {
+            const pointsEl = document.getElementById('points-display');
+            pointsEl.innerText = points;
+            pointsEl.classList.add('bounce-anim');
+            setTimeout(() => pointsEl.classList.remove('bounce-anim'), 400);
+        }
+    </script>
+</body>
+</html>
