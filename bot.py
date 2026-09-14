@@ -5,10 +5,9 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 
-# টোকেন ও চ্যানেল আইডি এখানে বসাতে হবে
 TOKEN = "8637183628:AAGgp96gEmGpJ6tnZiTA_4e6xNTTgo1t0hA"
-DB_CHANNEL_ID = "-1003995039828"      # ডাটাবেজ চ্যানেলের নেগেটিভ আইডি
-WITHDRAW_CHANNEL_ID = "-1004474241535" # পেমেন্ট উইথড্র রিকোয়েস্ট চ্যানেলের আইডি
+DB_CHANNEL_ID = -1003995039828      # ডাটাবেজ চ্যানেলের নেগেটিভ আইডি
+WITHDRAW_CHANNEL_ID = -1004474241535 # পেমেন্ট উইথড্র রিকোয়েস্ট চ্যানেলের আইডি
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
@@ -32,7 +31,6 @@ async def cmd_start(message: Message):
     else:
         await message.answer("আপনি ইতিমধ্যে রেজিস্টার্ড আছেন!")
 
-# উইথড্র রিকোয়েস্ট হ্যান্ডেল করার ফাংশন
 async def handle_withdraw_request(user_id: int, name: str, method: str, account: str, points: int, taka: str):
     withdraw_message = (
         f"🚨 **নতুন উইথড্র রিকোয়েস্ট!** 🚨\n\n"
@@ -55,7 +53,7 @@ dp.include_router(router)
 
 async def main():
     print("SohojAaybot স্টার্ট হচ্ছে...")
-    run_duration = 21300 # ৫ ঘণ্টা ৫৫ মিনিট
+    run_duration = 21300  # ৫ ঘণ্টা ৫৫ মিনিট
     start_time = time.time()
 
     polling_task = asyncio.create_task(dp.start_polling(bot))
